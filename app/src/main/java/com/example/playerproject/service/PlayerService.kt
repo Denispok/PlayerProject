@@ -1,5 +1,6 @@
 package com.example.playerproject.service
 
+import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
 import android.os.Binder
@@ -10,7 +11,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.media.MediaBrowserServiceCompat
-import com.example.playerproject.di.Injector
+import com.example.playerproject.MainActivity
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.source.ExtractorMediaSource
@@ -20,12 +21,12 @@ import java.util.*
 
 class PlayerService : MediaBrowserServiceCompat() {
 
-    // todo: notifications, player callbacks
+    // todo: notifications, player callbacks, media browsing
 
     companion object {
-        private const val MY_MEDIA_ROOT_ID = "media_root_id"
-        private const val MY_EMPTY_MEDIA_ROOT_ID = "empty_root_id"
+        private const val EMPTY_MEDIA_ROOT_ID = "empty_root_id"
         private const val POSITION_UPDATE_TIME_MILLIS = 500L
+        private const val PLAYBACK_SPEED = 1f
     }
 
     private lateinit var mediaSession: MediaSessionCompat
@@ -40,9 +41,7 @@ class PlayerService : MediaBrowserServiceCompat() {
     override fun onCreate() {
         super.onCreate()
 
-        mediaSession = MediaSessionCompat(baseContext, "PlayerServiceMediaSession").apply {
-
-            // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player
+        mediaSession = MediaSessionCompat(applicationContext, "PlayerServiceMediaSession").apply {
             stateBuilder = PlaybackStateCompat.Builder()
                 .setActions(
                     PlaybackStateCompat.ACTION_PLAY
@@ -54,9 +53,10 @@ class PlayerService : MediaBrowserServiceCompat() {
                 )
             setPlaybackState(stateBuilder.build())
 
-            setCallback(getMediaSessionCallback())
+            val activityIntent = Intent(applicationContext, MainActivity::class.java)
+            setSessionActivity(PendingIntent.getActivity(applicationContext, 0, activityIntent, 0))
 
-            // Set the session's token so that client activities can communicate with it.
+            setCallback(getMediaSessionCallback())
             setSessionToken(sessionToken)
         }
 
@@ -79,25 +79,22 @@ class PlayerService : MediaBrowserServiceCompat() {
                 currentPlayerUri = currentTrack.uri
 
                 mediaSession.setMetadata(parseMetadata(currentTrack))
-
                 mediaSession.isActive = true
 
-                player.prepare(
-                    ExtractorMediaSource.Factory(DefaultDataSourceFactory(Injector.context, Util.getUserAgent(Injector.context, "AppName")))
-                        .createMediaSource(currentTrack.uri)
-                )
+                val dataSourceFactory = DefaultDataSourceFactory(applicationContext, Util.getUserAgent(applicationContext, "PlayerApp"))
+                player.prepare(ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(currentTrack.uri))
             }
+
+            player.playWhenReady = true
+            startPositionLooper()
 
             mediaSession.setPlaybackState(
                 stateBuilder.setState(
                     PlaybackStateCompat.STATE_PLAYING,
-                    PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN,
-                    1f
+                    player.currentPosition,
+                    PLAYBACK_SPEED
                 ).build()
             )
-
-            player.playWhenReady = true
-            startPositionLooper()
         }
 
         override fun onPause() {
@@ -108,7 +105,8 @@ class PlayerService : MediaBrowserServiceCompat() {
             mediaSession.setPlaybackState(
                 stateBuilder.setState(
                     PlaybackStateCompat.STATE_PAUSED,
-                    PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1f
+                    player.currentPosition,
+                    PLAYBACK_SPEED
                 ).build()
             )
         }
@@ -125,7 +123,8 @@ class PlayerService : MediaBrowserServiceCompat() {
             mediaSession.setPlaybackState(
                 stateBuilder.setState(
                     PlaybackStateCompat.STATE_STOPPED,
-                    PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1f
+                    PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN,
+                    PLAYBACK_SPEED
                 ).build()
             )
         }
@@ -154,7 +153,7 @@ class PlayerService : MediaBrowserServiceCompat() {
     }
 
     override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot? {
-        return BrowserRoot(MY_EMPTY_MEDIA_ROOT_ID, null)
+        return BrowserRoot(EMPTY_MEDIA_ROOT_ID, null)
     }
 
     override fun onBind(intent: Intent?): IBinder? {

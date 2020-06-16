@@ -116,6 +116,7 @@ class PlayerViewModel : BaseViewModel() {
 
         override fun onServiceDisconnected(name: ComponentName) {
             playerServiceBinder = null
+            mediaController = null
         }
     }
 
