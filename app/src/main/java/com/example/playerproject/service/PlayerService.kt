@@ -1,5 +1,6 @@
 package com.example.playerproject.service
 
+import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -12,12 +13,17 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.media.MediaBrowserCompat
+import android.support.v4.media.MediaDescriptionCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.annotation.RequiresApi
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.media.MediaBrowserServiceCompat
+import androidx.media.session.MediaButtonReceiver
 import com.example.playerproject.MainActivity
+import com.example.playerproject.R
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.ExoPlayerFactory
 import com.google.android.exoplayer2.source.ExtractorMediaSource
@@ -31,6 +37,7 @@ class PlayerService : MediaBrowserServiceCompat() {
 
     companion object {
         private const val EMPTY_MEDIA_ROOT_ID = "empty_root_id"
+        private const val NOTIFICATION_ID = 1
         private const val POSITION_UPDATE_TIME_MILLIS = 500L
         private const val PLAYBACK_SPEED = 1f
         private const val DUCK_VOLUME = 0.2f
@@ -59,7 +66,7 @@ class PlayerService : MediaBrowserServiceCompat() {
             audioFocusRequest = getAudioFocusRequest()
         }
 
-        mediaSession = MediaSessionCompat(applicationContext, "PlayerServiceMediaSession").apply {
+        mediaSession = MediaSessionCompat(this, "PlayerServiceMediaSession").apply {
             stateBuilder = PlaybackStateCompat.Builder()
                 .setActions(
                     PlaybackStateCompat.ACTION_PLAY
@@ -71,19 +78,24 @@ class PlayerService : MediaBrowserServiceCompat() {
                 )
             setPlaybackState(stateBuilder.build())
 
-            val activityIntent = Intent(applicationContext, MainActivity::class.java)
-            setSessionActivity(PendingIntent.getActivity(applicationContext, 0, activityIntent, 0))
+            val activityIntent = Intent(this@PlayerService, MainActivity::class.java)
+            setSessionActivity(PendingIntent.getActivity(this@PlayerService, 0, activityIntent, 0))
 
             setCallback(getMediaSessionCallback())
             setSessionToken(sessionToken)
         }
 
         metadataBuilder = MediaMetadataCompat.Builder()
-        player = ExoPlayerFactory.newSimpleInstance(applicationContext)
+        player = ExoPlayerFactory.newSimpleInstance(this)
 
         // todo
-        /*val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON, null, applicationContext, MediaButtonReceiver::class.java)
-        mediaSession.setMediaButtonReceiver(PendingIntent.getBroadcast(applicationContext, 0, mediaButtonIntent, 0));*/
+//        val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON, null, this, MediaButtonReceiver::class.java)
+//        mediaSession.setMediaButtonReceiver(PendingIntent.getBroadcast(this, 0, mediaButtonIntent, 0))
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        MediaButtonReceiver.handleIntent(mediaSession, intent)
+        return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onDestroy() {
@@ -148,11 +160,12 @@ class PlayerService : MediaBrowserServiceCompat() {
 
             if (currentPlayerUri != currentTrack.uri) {
                 currentPlayerUri = currentTrack.uri
+                startService(Intent(this@PlayerService, PlayerService::class.java))
 
                 mediaSession.setMetadata(parseMetadata(currentTrack))
                 mediaSession.isActive = true
 
-                val dataSourceFactory = DefaultDataSourceFactory(applicationContext, Util.getUserAgent(applicationContext, "PlayerApp"))
+                val dataSourceFactory = DefaultDataSourceFactory(this@PlayerService, Util.getUserAgent(this@PlayerService, "PlayerApp"))
                 player.prepare(ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(currentTrack.uri))
             }
 
@@ -167,6 +180,8 @@ class PlayerService : MediaBrowserServiceCompat() {
                     PLAYBACK_SPEED
                 ).build()
             )
+
+            updateNotification(PlaybackStateCompat.STATE_PLAYING)
         }
 
         override fun onPause() {
@@ -181,6 +196,8 @@ class PlayerService : MediaBrowserServiceCompat() {
                     PLAYBACK_SPEED
                 ).build()
             )
+
+            updateNotification(PlaybackStateCompat.STATE_PAUSED)
         }
 
         override fun onStop() {
@@ -205,6 +222,9 @@ class PlayerService : MediaBrowserServiceCompat() {
                     PLAYBACK_SPEED
                 ).build()
             )
+
+            updateNotification(PlaybackStateCompat.STATE_STOPPED)
+            stopSelf()
         }
 
         override fun onSeekTo(pos: Long) {
@@ -244,6 +264,78 @@ class PlayerService : MediaBrowserServiceCompat() {
         positionTimer?.scheduleAtFixedRate(timerTask, POSITION_UPDATE_TIME_MILLIS, POSITION_UPDATE_TIME_MILLIS)
     }
 
+    fun updateNotification(playbackState: Int) {
+        when (playbackState) {
+            PlaybackStateCompat.STATE_PLAYING -> {
+                startForeground(NOTIFICATION_ID, getNotification(playbackState))
+            }
+
+            PlaybackStateCompat.STATE_PAUSED -> {
+                NotificationManagerCompat.from(this@PlayerService).notify(NOTIFICATION_ID, getNotification(playbackState))
+                stopForeground(false)
+            }
+
+            else -> {
+                stopForeground(true)
+            }
+        }
+    }
+
+    private fun getNotification(playbackState: Int): Notification {
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            NotificationCompat.Builder(this, getString(R.string.notification_channel_id))
+        else NotificationCompat.Builder(this)
+
+        builder.setContentIntent(mediaSession.controller.sessionActivity)
+            .setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_STOP))
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setSmallIcon(android.R.drawable.ic_media_play)
+            .addAction(
+                NotificationCompat.Action(
+                    android.R.drawable.ic_media_previous, getString(R.string.player_previous),
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
+                )
+            )
+            .addAction(
+                if (playbackState == PlaybackStateCompat.STATE_PLAYING)
+                    NotificationCompat.Action(
+                        android.R.drawable.ic_media_pause, getString(R.string.player_pause),
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)
+                    )
+                else
+                    NotificationCompat.Action(
+                        android.R.drawable.ic_media_play, getString(R.string.player_play),
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)
+                    )
+            )
+            .addAction(
+                NotificationCompat.Action(
+                    android.R.drawable.ic_media_next, getString(R.string.player_next),
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT)
+                )
+            )
+            .setStyle(
+                androidx.media.app.NotificationCompat.MediaStyle()
+                    .setMediaSession(mediaSession.sessionToken)
+                    .setShowActionsInCompactView(0, 1, 2)
+                    .setShowCancelButton(true)
+                    .setCancelButtonIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_STOP))
+            )
+            .setShowWhen(false)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setOnlyAlertOnce(true)
+
+        setNotificationDescription(builder, mediaSession.controller.metadata.description)
+        return builder.build()
+    }
+
+    private fun setNotificationDescription(builder: NotificationCompat.Builder, description: MediaDescriptionCompat) {
+        builder.setContentTitle(description.title)
+            .setContentText(description.subtitle)
+            .setSubText(description.description)
+            .setLargeIcon(description.iconBitmap)
+    }
+
     private fun parseMetadata(track: PlayerPlaylist.Track): MediaMetadataCompat {
         return metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.title)
             .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.artist)
@@ -259,7 +351,7 @@ class PlayerService : MediaBrowserServiceCompat() {
         }
 
         fun setPlaylist(list: List<Uri>) {
-            playerPlaylist.setPlaylist(applicationContext, list)
+            playerPlaylist.setPlaylist(this@PlayerService, list)
             mediaSession.controller.transportControls.play()
         }
     }

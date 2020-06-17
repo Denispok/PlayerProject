@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">PlayerProject</string>
+
+    <string name="notification_channel_name">Player Notification</string>
+    <string name="notification_channel_id">player_notification</string>
+
+    <string name="player_previous">Previous</string>
+    <string name="player_next">Next</string>
+    <string name="player_play">Play</string>
+    <string name="player_pause">Pause</string>
 </resources>

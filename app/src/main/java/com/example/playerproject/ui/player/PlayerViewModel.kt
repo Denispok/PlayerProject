@@ -85,7 +85,7 @@ class PlayerViewModel : BaseViewModel() {
         }
     }
 
-    private fun setMetadata(metadata: MediaMetadataCompat?) {
+    private fun setMetadata(metadata: MediaMetadataCompat?) { // todo description
         _metadata.postValue(metadata)
     }
 

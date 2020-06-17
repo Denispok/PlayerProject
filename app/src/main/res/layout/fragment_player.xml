@@ -9,7 +9,7 @@
         android:layout_width="260dp"
         android:layout_height="260dp"
         android:background="#E4EAFF"
-        android:scaleType="center"
+        android:scaleType="centerInside"
         android:src="@drawable/ic_mini_player_next_28"
         app:layout_constraintBottom_toTopOf="@id/clTitleBlock"
         app:layout_constraintEnd_toEndOf="parent"
