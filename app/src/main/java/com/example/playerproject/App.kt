@@ -22,7 +22,7 @@ class App : Application() {
     @RequiresApi(Build.VERSION_CODES.O)
     fun createNotificationChannel() {
         val name = getString(R.string.notification_channel_name)
-        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val importance = NotificationManager.IMPORTANCE_LOW
         val channel = NotificationChannel(getString(R.string.notification_channel_id), name, importance)
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)

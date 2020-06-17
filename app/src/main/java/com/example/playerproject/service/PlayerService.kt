@@ -2,8 +2,10 @@ package com.example.playerproject.service
 
 import android.app.Notification
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -48,6 +50,7 @@ class PlayerService : MediaBrowserServiceCompat() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private lateinit var audioFocusRequest: AudioFocusRequest
+    private lateinit var noisyBroadcastReceiver: BroadcastReceiver
 
     private lateinit var mediaSession: MediaSessionCompat
     private lateinit var stateBuilder: PlaybackStateCompat.Builder
@@ -65,6 +68,8 @@ class PlayerService : MediaBrowserServiceCompat() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             audioFocusRequest = getAudioFocusRequest()
         }
+
+        noisyBroadcastReceiver = getNoisyBroadcastReceiver()
 
         mediaSession = MediaSessionCompat(this, "PlayerServiceMediaSession").apply {
             stateBuilder = PlaybackStateCompat.Builder()
@@ -161,6 +166,7 @@ class PlayerService : MediaBrowserServiceCompat() {
             if (currentPlayerUri != currentTrack.uri) {
                 currentPlayerUri = currentTrack.uri
                 startService(Intent(this@PlayerService, PlayerService::class.java))
+                registerReceiver(noisyBroadcastReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
 
                 mediaSession.setMetadata(parseMetadata(currentTrack))
                 mediaSession.isActive = true
@@ -185,6 +191,8 @@ class PlayerService : MediaBrowserServiceCompat() {
         }
 
         override fun onPause() {
+            unregisterReceiver(noisyBroadcastReceiver)
+
             positionTimer?.cancel()
             positionTimer = null
             player.playWhenReady = false
@@ -206,6 +214,8 @@ class PlayerService : MediaBrowserServiceCompat() {
             } else {
                 audioManager.abandonAudioFocus(audioFocusChangeListener)
             }
+
+            unregisterReceiver(noisyBroadcastReceiver)
 
             currentPlayerUri = null
 
@@ -242,6 +252,15 @@ class PlayerService : MediaBrowserServiceCompat() {
             val previousTrack = playerPlaylist.previous()
             if (previousTrack != null) {
                 mediaSession.controller.transportControls.play()
+            }
+        }
+    }
+
+    private fun getNoisyBroadcastReceiver() = object : BroadcastReceiver() {
+
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY) {
+                mediaSession.controller.transportControls.pause()
             }
         }
     }
