@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context=".ui.player.PlayerFragment">
 
     <ImageView
         android:id="@+id/ivArtwork"
         android:layout_width="260dp"
         android:layout_height="260dp"
+        android:layout_marginTop="24dp"
         android:background="#E4EAFF"
         android:scaleType="centerInside"
         android:src="@drawable/ic_mini_player_next_28"
@@ -21,6 +24,8 @@
         android:id="@+id/clTitleBlock"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="28dp"
+        android:layout_marginEnd="28dp"
         app:layout_constraintBottom_toTopOf="@id/clPositionBlock"
         app:layout_constraintTop_toBottomOf="@id/ivArtwork">
 
@@ -28,17 +33,24 @@
             android:id="@+id/ivAdd"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:padding="4dp"
             android:src="@drawable/ic_add_outline_24"
             android:tint="@color/colorAccent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
+        <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/tvTitle"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:singleLine="true"
             android:text="Title"
+            android:textColor="@color/colorTextDark"
+            android:textSize="24sp"
+            android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@id/tvArtist"
             app:layout_constraintEnd_toStartOf="@id/ivMore"
             app:layout_constraintStart_toEndOf="@id/ivAdd"
@@ -46,9 +58,14 @@
 
         <TextView
             android:id="@+id/tvArtist"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:singleLine="true"
             android:text="Artist"
+            android:textColor="#528BCC"
+            android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/ivMore"
             app:layout_constraintStart_toEndOf="@id/ivAdd"
@@ -58,6 +75,7 @@
             android:id="@+id/ivMore"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:padding="4dp"
             android:src="@drawable/ic_ic_more_24dp"
             android:tint="@color/colorAccent"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -85,6 +103,7 @@
             android:id="@+id/tvCurrentTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
             android:text="0:00"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/sbPosition" />
@@ -93,6 +112,7 @@
             android:id="@+id/tvRemainingTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
             android:text="-0:00"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/sbPosition" />
@@ -137,6 +157,8 @@
         android:id="@+id/ivShuffle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginBottom="24dp"
         android:src="@drawable/ic_shuffle_24"
         android:tint="@color/colorAccent"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -146,6 +168,7 @@
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
         android:src="@drawable/ic_repeat_24"
         android:tint="@color/colorAccent"
         app:layout_constraintBottom_toBottomOf="@id/ivShuffle"

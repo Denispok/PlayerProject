@@ -12,7 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Откуда играть музыку?"
-        android:textColor="#444546"
+        android:textColor="@color/colorTextDark"
         android:textSize="28sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@id/tvDescription"

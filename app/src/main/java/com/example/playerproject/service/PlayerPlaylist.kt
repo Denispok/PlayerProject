@@ -54,7 +54,7 @@ class PlayerPlaylist {
         val duration: Long
     ) {
         fun getArtwork(): Bitmap? {
-            val metadataRetriever = MediaMetadataRetriever() // todo reusable retriever
+            val metadataRetriever = MediaMetadataRetriever() // todo reusable retriever and default artwork
             metadataRetriever.setDataSource(Injector.context, uri)
             val byteArray = metadataRetriever.embeddedPicture ?: return null
             return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
