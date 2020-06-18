@@ -4,6 +4,10 @@
     <color name="colorPrimaryDark">#D8DADD</color>
     <color name="colorAccent">#3F8AE0</color>
 
+    <color name="colorBackground">#ffffff</color>
+    <color name="colorBackgroundDark">#EBEDF0</color>
+    <color name="colorBackgroundImage">#E4EAFF</color>
+
     <color name="colorTextDark">#444546</color>
 
     <color name="colorButtonGradientStart">#72BDF1</color>
