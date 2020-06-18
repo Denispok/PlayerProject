@@ -12,4 +12,6 @@
     <string name="main_title">Откуда играть музыку?</string>
     <string name="main_subtitle">Выберите папку с аудиозаписями</string>
     <string name="main_choose_folder">Выбрать папку</string>
+    <string name="main_error_read">Ошибка чтения файлов</string>
+    <string name="main_error_empty">В выбранной папке не найдено аудиозаписей</string>
 </resources>

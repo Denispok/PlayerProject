@@ -13,6 +13,7 @@ import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.playerproject.R
 import com.example.playerproject.di.Injector
 import com.example.playerproject.service.PlayerService
 import com.example.playerproject.ui.base.BaseViewModel
@@ -61,10 +62,12 @@ class MainViewModel : BaseViewModel() {
 
     fun onFolderChosen(treeUri: Uri) {
         val list = fileManager.getAudioFilesFromTreeUri(treeUri)
-        if (list != null) {
-            playerServiceBinder?.setPlaylist(list)
+        if (list == null) {
+            errors.postValue(context.getString(R.string.main_error_read))
+        } else if (list.isEmpty()) {
+            errors.postValue(context.getString(R.string.main_error_empty))
         } else {
-            // todo: show error
+            playerServiceBinder?.setPlaylist(list)
         }
     }
 

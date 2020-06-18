@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 
 abstract class BaseViewModel : ViewModel() {
 
+    val errors = SingleLiveEvent<String>()
+
     open fun onCreate() {
     }
 
