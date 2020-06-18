@@ -19,6 +19,7 @@ import android.support.v4.media.session.PlaybackStateCompat
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.session.MediaButtonReceiver
 import com.example.playerproject.MainActivity
@@ -375,10 +376,11 @@ class PlayerService : MediaBrowserServiceCompat() {
     }
 
     private fun parseMetadata(track: PlayerPlaylist.Track): MediaMetadataCompat {
+        val artwork = track.getArtwork(this) ?: getDrawable(R.drawable.ic_artwork_default)?.toBitmap()
         return metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.title)
             .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.artist)
             .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, track.duration)
-            .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, track.getArtwork())
+            .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, artwork)
             .build()
     }
 

@@ -28,6 +28,9 @@ class MainViewModel : BaseViewModel() {
     private var mediaController: MediaControllerCompat? = null
     private var metadata: MediaMetadataCompat? = null
 
+    private val _isPlayerVisible = MutableLiveData<Boolean>()
+    val isPlayerVisible: LiveData<Boolean> get() = _isPlayerVisible
+
     private val _description = MutableLiveData<MediaDescriptionCompat?>()
     val description: LiveData<MediaDescriptionCompat?> get() = _description
 
@@ -36,6 +39,10 @@ class MainViewModel : BaseViewModel() {
 
     private val _remainingTime = MutableLiveData<String>()
     val remainingTime: LiveData<String> get() = _remainingTime
+
+    init {
+        _isPlayerVisible.value = false
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -74,6 +81,7 @@ class MainViewModel : BaseViewModel() {
     }
 
     private fun setPlaybackState(state: PlaybackStateCompat) {
+        _isPlayerVisible.postValue(state.state == PlaybackStateCompat.STATE_PLAYING || state.state == PlaybackStateCompat.STATE_PAUSED)
         _isPlaying.postValue(state.state == PlaybackStateCompat.STATE_PLAYING)
 
         metadata?.also { meta ->

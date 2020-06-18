@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import com.example.playerproject.di.Injector
 
 class PlayerPlaylist {
 
@@ -13,14 +12,17 @@ class PlayerPlaylist {
     private var currentTrackIndex = 0
     private val metadataRetriever = MediaMetadataRetriever()
 
-    // todo empty list state
     fun setPlaylist(context: Context, list: List<Uri>) {
-        tracks = list.map {
-            metadataRetriever.setDataSource(context, it)
-            val title = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
-            val artist = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
-            val duration = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: -1
-            Track(it, title, artist, duration)
+        tracks = if (list.isEmpty()) {
+            null
+        } else {
+            list.map {
+                metadataRetriever.setDataSource(context, it) // todo catch exceptions
+                val title = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+                val artist = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                val duration = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: -1
+                Track(it, title, artist, duration)
+            }
         }
         currentTrackIndex = 0
     }
@@ -53,9 +55,9 @@ class PlayerPlaylist {
         val artist: String?,
         val duration: Long
     ) {
-        fun getArtwork(): Bitmap? {
-            val metadataRetriever = MediaMetadataRetriever() // todo reusable retriever and default artwork
-            metadataRetriever.setDataSource(Injector.context, uri)
+        fun getArtwork(context: Context): Bitmap? {
+            val metadataRetriever = MediaMetadataRetriever() // todo reusable retriever
+            metadataRetriever.setDataSource(context, uri)
             val byteArray = metadataRetriever.embeddedPicture ?: return null
             return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
         }

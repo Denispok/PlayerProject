@@ -48,6 +48,10 @@ class MainFragment : BaseFragment() {
                 .commit()
         }
 
+        viewModel.isPlayerVisible.observe(viewLifecycleOwner, Observer { isPlayerVisible ->
+            llPlayer.visibility = if (isPlayerVisible) View.VISIBLE else View.GONE
+        })
+
         viewModel.isPlaying.observe(viewLifecycleOwner, Observer { isPlaying ->
             ivPlayPause.setImageResource(if (isPlaying) R.drawable.ic_pause_28 else R.drawable.ic_play_48)
         })
