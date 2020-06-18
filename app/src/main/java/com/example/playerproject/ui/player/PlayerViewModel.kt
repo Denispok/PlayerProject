@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import android.os.RemoteException
+import android.support.v4.media.MediaDescriptionCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -22,9 +23,10 @@ class PlayerViewModel : BaseViewModel() {
     private var serviceConnection: ServiceConnection? = null
     private var playerServiceBinder: PlayerService.PlayerServiceBinder? = null
     private var mediaController: MediaControllerCompat? = null
+    private var metadata: MediaMetadataCompat? = null
 
-    private val _metadata = MutableLiveData<MediaMetadataCompat?>()
-    val metadata: LiveData<MediaMetadataCompat?> get() = _metadata
+    private val _description = MutableLiveData<MediaDescriptionCompat?>()
+    val description: LiveData<MediaDescriptionCompat?> get() = _description
 
     private val _isPlaying = MutableLiveData<Boolean>()
     val isPlaying: LiveData<Boolean> get() = _isPlaying
@@ -64,7 +66,7 @@ class PlayerViewModel : BaseViewModel() {
     }
 
     fun onSeek(progress: Int) {
-        _metadata.value?.also { meta ->
+        metadata?.also { meta ->
             val duration = meta.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
             mediaController?.transportControls?.seekTo(duration / 100 * progress)
         }
@@ -73,7 +75,7 @@ class PlayerViewModel : BaseViewModel() {
     private fun setPlaybackState(state: PlaybackStateCompat) {
         _isPlaying.postValue(state.state == PlaybackStateCompat.STATE_PLAYING)
 
-        _metadata.value?.also { meta ->
+        metadata?.also { meta ->
             val duration = meta.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
 
             val position = if (duration > 0) (state.position.toFloat() / duration * 100).toInt() else 0
@@ -85,8 +87,9 @@ class PlayerViewModel : BaseViewModel() {
         }
     }
 
-    private fun setMetadata(metadata: MediaMetadataCompat?) { // todo description
-        _metadata.postValue(metadata)
+    private fun setMetadata(metadata: MediaMetadataCompat?) {
+        this.metadata = metadata
+        _description.postValue(metadata?.description)
     }
 
     private inner class PlayerServiceConnection : ServiceConnection {

@@ -1,7 +1,6 @@
 package com.example.playerproject.ui.player
 
 import android.os.Bundle
-import android.support.v4.media.MediaMetadataCompat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -63,10 +62,10 @@ class PlayerFragment : BaseFragment() {
             tvRemainingTime.text = playPosition.remainingTime
         })
 
-        viewModel.metadata.observe(viewLifecycleOwner, Observer { metadata ->
-            tvTitle.text = metadata?.getString(MediaMetadataCompat.METADATA_KEY_TITLE)
-            tvArtist.text = metadata?.getString(MediaMetadataCompat.METADATA_KEY_ARTIST)
-            ivArtwork.setImageBitmap(metadata?.getBitmap(MediaMetadataCompat.METADATA_KEY_ART))
+        viewModel.description.observe(viewLifecycleOwner, Observer { description ->
+            tvTitle.text = description?.title
+            tvArtist.text = description?.subtitle
+            ivArtwork.setImageBitmap(description?.iconBitmap)
         })
     }
 }
