@@ -2,23 +2,35 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/clContent"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorBackground"
+    android:background="@drawable/background_white_top_rounded"
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
     tools:context=".ui.player.PlayerFragment">
+
+    <ImageView
+        android:id="@+id/ivDropdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_dropdown_24"
+        android:tint="@color/colorTextDark"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/ivArtwork"
         android:layout_width="260dp"
         android:layout_height="260dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="8dp"
         android:background="#E4EAFF"
         android:scaleType="centerInside"
         android:src="@drawable/ic_mini_player_next_28"
         app:layout_constraintBottom_toTopOf="@id/clTitleBlock"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivDropdown"
         app:layout_constraintVertical_chainStyle="spread_inside" />
 
     <androidx.constraintlayout.widget.ConstraintLayout

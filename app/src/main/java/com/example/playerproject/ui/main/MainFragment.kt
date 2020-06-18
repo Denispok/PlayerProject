@@ -41,6 +41,13 @@ class MainFragment : BaseFragment() {
             viewModel.onNextClick()
         }
 
+        llPlayer.setOnClickListener {
+            requireActivity().supportFragmentManager.beginTransaction()
+                .addToBackStack(null)
+                .add(R.id.container, PlayerFragment.newInstance())
+                .commit()
+        }
+
         viewModel.isPlaying.observe(viewLifecycleOwner, Observer { isPlaying ->
             ivPlayPause.setImageResource(if (isPlaying) R.drawable.ic_pause_28 else R.drawable.ic_play_48)
         })
@@ -59,12 +66,6 @@ class MainFragment : BaseFragment() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == FOLDER_REQUEST_CODE) {
             data?.data?.let { viewModel.onFolderChosen(it) }
-
-            // todo move to transactions
-            requireActivity().supportFragmentManager.beginTransaction()
-                .addToBackStack(null)
-                .replace(R.id.container, PlayerFragment.newInstance())
-                .commit()
         }
     }
 
