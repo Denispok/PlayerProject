@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
 import com.example.playerproject.R
 import com.example.playerproject.ui.base.BaseFragment
 import com.example.playerproject.ui.player.PlayerFragment
@@ -31,6 +32,27 @@ class MainFragment : BaseFragment() {
         btnChooseFolder.setOnClickListener {
             openDirectory()
         }
+
+        ivPlayPause.setOnClickListener {
+            viewModel.onPlayPauseClick()
+        }
+
+        ivNext.setOnClickListener {
+            viewModel.onNextClick()
+        }
+
+        viewModel.isPlaying.observe(viewLifecycleOwner, Observer { isPlaying ->
+            ivPlayPause.setImageResource(if (isPlaying) R.drawable.ic_pause_28 else R.drawable.ic_play_48)
+        })
+
+        viewModel.remainingTime.observe(viewLifecycleOwner, Observer { remainingTime ->
+            tvRemainingTime.text = remainingTime
+        })
+
+        viewModel.description.observe(viewLifecycleOwner, Observer { description ->
+            tvPlayerTitle.text = description?.title
+            ivArtwork.setImageBitmap(description?.iconBitmap)
+        })
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

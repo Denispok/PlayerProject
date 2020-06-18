@@ -15,6 +15,7 @@ import androidx.lifecycle.MutableLiveData
 import com.example.playerproject.di.Injector
 import com.example.playerproject.service.PlayerService
 import com.example.playerproject.ui.base.BaseViewModel
+import com.example.playerproject.utils.TextUtil
 
 class PlayerViewModel : BaseViewModel() {
 
@@ -79,9 +80,10 @@ class PlayerViewModel : BaseViewModel() {
             val duration = meta.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)
 
             val position = if (duration > 0) (state.position.toFloat() / duration * 100).toInt() else 0
-            val currentTime = if (state.position != PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN) state.position.toString()
-            else 0.toString()
-            val remainingTime = if (duration > 0) (duration - position).toString() else 0.toString()
+            val currentTime = if (state.position != PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN) TextUtil.formatTrackTime(state.position)
+            else TextUtil.formatTrackTime(0)
+            val remainingTime = if (duration > 0) TextUtil.formatRemainingTrackTime(state.position, duration)
+            else TextUtil.formatTrackTime(0)
 
             _position.postValue(PlayPosition(position, currentTime, remainingTime))
         }
