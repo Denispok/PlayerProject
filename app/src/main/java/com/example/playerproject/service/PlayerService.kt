@@ -10,10 +10,7 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.net.Uri
-import android.os.Binder
-import android.os.Build
-import android.os.Bundle
-import android.os.IBinder
+import android.os.*
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaDescriptionCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -45,12 +42,14 @@ class PlayerService : MediaBrowserServiceCompat() {
         private const val DUCK_VOLUME = 0.2f
     }
 
+    private lateinit var mainHandler: Handler
+
     private lateinit var audioManager: AudioManager
     private lateinit var audioFocusChangeListener: AudioManager.OnAudioFocusChangeListener
 
     @RequiresApi(Build.VERSION_CODES.O)
     private lateinit var audioFocusRequest: AudioFocusRequest
-    private lateinit var noisyBroadcastReceiver: BroadcastReceiver
+    private var noisyBroadcastReceiver: BroadcastReceiver? = null
 
     private lateinit var mediaSession: MediaSessionCompat
     private lateinit var stateBuilder: PlaybackStateCompat.Builder
@@ -63,13 +62,13 @@ class PlayerService : MediaBrowserServiceCompat() {
 
     override fun onCreate() {
         super.onCreate()
+        mainHandler = Handler(Looper.getMainLooper())
+
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         audioFocusChangeListener = getAudioFocusChangeListener()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             audioFocusRequest = getAudioFocusRequest()
         }
-
-        noisyBroadcastReceiver = getNoisyBroadcastReceiver()
 
         mediaSession = MediaSessionCompat(this, "PlayerServiceMediaSession").apply {
             stateBuilder = PlaybackStateCompat.Builder()
@@ -93,9 +92,6 @@ class PlayerService : MediaBrowserServiceCompat() {
         metadataBuilder = MediaMetadataCompat.Builder()
         player = ExoPlayerFactory.newSimpleInstance(this)
 
-        // todo
-//        val mediaButtonIntent = Intent(Intent.ACTION_MEDIA_BUTTON, null, this, MediaButtonReceiver::class.java)
-//        mediaSession.setMediaButtonReceiver(PendingIntent.getBroadcast(this, 0, mediaButtonIntent, 0))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -166,13 +162,17 @@ class PlayerService : MediaBrowserServiceCompat() {
             if (currentPlayerUri != currentTrack.uri) {
                 currentPlayerUri = currentTrack.uri
                 startService(Intent(this@PlayerService, PlayerService::class.java))
-                registerReceiver(noisyBroadcastReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
 
                 mediaSession.setMetadata(parseMetadata(currentTrack))
                 mediaSession.isActive = true
 
                 val dataSourceFactory = DefaultDataSourceFactory(this@PlayerService, Util.getUserAgent(this@PlayerService, "PlayerApp"))
                 player.prepare(ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(currentTrack.uri))
+            }
+
+            if (noisyBroadcastReceiver == null) {
+                noisyBroadcastReceiver = getNoisyBroadcastReceiver()
+                registerReceiver(noisyBroadcastReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
             }
 
             player.playWhenReady = true
@@ -191,7 +191,10 @@ class PlayerService : MediaBrowserServiceCompat() {
         }
 
         override fun onPause() {
-            unregisterReceiver(noisyBroadcastReceiver)
+            noisyBroadcastReceiver?.also {
+                unregisterReceiver(it)
+                noisyBroadcastReceiver = null
+            }
 
             positionTimer?.cancel()
             positionTimer = null
@@ -215,7 +218,10 @@ class PlayerService : MediaBrowserServiceCompat() {
                 audioManager.abandonAudioFocus(audioFocusChangeListener)
             }
 
-            unregisterReceiver(noisyBroadcastReceiver)
+            noisyBroadcastReceiver?.also {
+                unregisterReceiver(it)
+                noisyBroadcastReceiver = null
+            }
 
             currentPlayerUri = null
 
@@ -270,13 +276,14 @@ class PlayerService : MediaBrowserServiceCompat() {
         val timerTask = object : TimerTask() {
 
             override fun run() {
-                if (mediaSession.controller.playbackState.state == PlaybackStateCompat.STATE_PLAYING) { // todo current state?
-                    mediaSession.setPlaybackState(
-                        stateBuilder
-                            .setState(PlaybackStateCompat.STATE_PLAYING, player.currentPosition, 1f)
-                            .build()
-                    )
-                }
+                if (mediaSession.controller.playbackState.state == PlaybackStateCompat.STATE_PLAYING)
+                    mainHandler.post {
+                        mediaSession.setPlaybackState(
+                            stateBuilder
+                                .setState(PlaybackStateCompat.STATE_PLAYING, player.currentPosition, 1f)
+                                .build()
+                        )
+                    }
             }
         }
         positionTimer = Timer()
@@ -319,12 +326,12 @@ class PlayerService : MediaBrowserServiceCompat() {
                 if (playbackState == PlaybackStateCompat.STATE_PLAYING)
                     NotificationCompat.Action(
                         android.R.drawable.ic_media_pause, getString(R.string.player_pause),
-                        MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PAUSE)
                     )
                 else
                     NotificationCompat.Action(
                         android.R.drawable.ic_media_play, getString(R.string.player_play),
-                        MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY_PAUSE)
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY)
                     )
             )
             .addAction(

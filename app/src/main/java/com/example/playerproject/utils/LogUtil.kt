@@ -10,4 +10,8 @@ object LogUtil {
         val actionTime = System.currentTimeMillis() - startTime
         Log.d("TIME", "$message $actionTime millis")
     }
+
+    fun logd(message: Any?) {
+        Log.d("DEBUG", message.toString())
+    }
 }
