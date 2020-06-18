@@ -25,6 +25,7 @@ import com.example.playerproject.MainActivity
 import com.example.playerproject.R
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.ExoPlayerFactory
+import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.source.ExtractorMediaSource
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.util.Util
@@ -32,7 +33,7 @@ import java.util.*
 
 class PlayerService : MediaBrowserServiceCompat() {
 
-    // todo: notifications, player callbacks, media browsing
+    // todo: player error, media browsing
 
     companion object {
         private const val EMPTY_MEDIA_ROOT_ID = "empty_root_id"
@@ -91,7 +92,18 @@ class PlayerService : MediaBrowserServiceCompat() {
 
         metadataBuilder = MediaMetadataCompat.Builder()
         player = ExoPlayerFactory.newSimpleInstance(this)
+        player.addListener(object : Player.EventListener {
 
+            override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED) {
+                    if (playerPlaylist.hasNext()) {
+                        mediaSession.controller.transportControls.skipToNext()
+                    } else {
+                        mediaSession.controller.transportControls.stop()
+                    }
+                }
+            }
+        })
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

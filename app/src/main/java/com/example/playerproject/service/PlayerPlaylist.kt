@@ -29,18 +29,22 @@ class PlayerPlaylist {
         return tracks?.get(currentTrackIndex)
     }
 
+    fun hasPrevious(): Boolean {
+        return tracks?.let { currentTrackIndex > 0 } ?: false
+    }
+
     fun previous(): Track? {
-        return tracks?.let {
-            if (currentTrackIndex > 0) it[--currentTrackIndex]
-            else null
-        }
+        return if (hasPrevious()) tracks?.get(--currentTrackIndex)
+        else null
+    }
+
+    fun hasNext(): Boolean {
+        return tracks?.let { currentTrackIndex + 1 < it.size } ?: false
     }
 
     fun next(): Track? {
-        return tracks?.let {
-            if (currentTrackIndex + 1 < it.size) it[++currentTrackIndex]
-            else null
-        }
+        return if (hasNext()) tracks?.get(++currentTrackIndex)
+        else null
     }
 
     class Track(
